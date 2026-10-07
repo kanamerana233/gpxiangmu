@@ -1,0 +1,6 @@
+streamlit
+requests
+feedparser
+python-dotenv
+openai
+cftc-cot
