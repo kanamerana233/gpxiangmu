@@ -1,0 +1,19 @@
+# 环境变量
+.env
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 测试文件
+test_*.py
+
+# 本地服务文件夹
+china-finance-rss/
+china-finance-rss-main/
+
+# 数据文件夹
+dataset/
+
+# 数据库文件（可选，如果不想上传本地数据）
+stock_ai.db
