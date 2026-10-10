@@ -1,0 +1,10 @@
+[server]
+headless = true
+fileWatcherType = "none"
+maxUploadSize = 10
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+fastReruns = true

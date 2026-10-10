@@ -1,0 +1,158 @@
+{
+  "blacklist": [
+    "开通会员", "PLUS会员", "尊享", "立即购买", "立即登录",
+    "优惠礼包", "专属客服", "专属微标", "独享小程序", "专享日报",
+    "VIP", "订阅会员", "升级会员", "点击查看", "限时优惠",
+    "扫码关注", "下载APP", "广告", "赞助"
+  ],
+
+  "domain_keywords": {
+    "地缘/能源/黄金": [
+      "地缘", "战争", "冲突", "制裁", "谈判", "外交", "军事",
+      "俄乌", "中东", "以色列", "伊朗", "朝鲜", "台海", "南海",
+      "原油", "石油", "电力", "天然气", "煤炭", "新能源", "油气",
+      "OPEC", "油价", "LNG", "页岩油",
+      "黄金", "金价", "贵金属", "避险"
+    ],
+    "央行政策": [
+      "央行", "人民银行", "降准", "降息", "LPR", "逆回购",
+      "MLF", "货币政策", "流动性", "公开市场", "存款准备金"
+    ],
+    "证监会政策": [
+      "证监会", "证券监管", "交易所", "上市公司监管",
+      "并购重组", "IPO", "退市", "股票发行", "信息披露",
+      "注册制", "北交所", "科创板"
+    ],
+    "国内政策/快讯": [
+      "国务院", "发改委", "财政部", "国常会", "人民银行", "央行",
+      "政策", "通知", "意见", "办法", "规划", "方案",
+      "降准", "降息", "LPR", "专项债", "减税", "降费",
+      "经济", "财政", "货币"
+    ],
+    "国内科技": [
+      "半导体", "芯片", "人工智能", "软件", "云计算", "大数据", "量子",
+      "生物医药", "创新药", "疫苗", "基因", "医疗器械",
+      "新能源", "光伏", "锂电", "储能", "风电", "氢能", "电动车",
+      "新材料", "碳纤维", "石墨烯", "稀土",
+      "高端装备", "工业母机", "机器人", "数控机床",
+      "航空航天", "卫星", "商业航天", "船舶", "海洋工程",
+      "环保", "碳中和", "碳达峰", "节能",
+      "农业", "种业", "农机", "生物育种",
+      "可控核聚变", "脑机接口", "6G"
+    ],
+    "A股": [
+      "A股", "沪指", "上证", "深证", "创业板", "科创板", "北交所", "沪深"
+    ],
+    "美股": [
+      "美股", "纳斯达克", "道琼斯", "标普", "S&P",
+      "NYSE", "Nasdaq", "Dow", "Wall Street",
+      "Tesla", "Apple", "Nvidia", "Microsoft", "Google", "Amazon", "Meta",
+      "特斯拉", "苹果", "英伟达", "微软", "谷歌", "亚马逊"
+    ],
+    "能源供需": [
+      "OPEC", "欧佩克", "石油输出国组织", "月报", "供需", "需求", "产量",
+      "原油", "石油", "库存", "减产", "增产", "IEA", "国际能源署",
+      "EIA", "美国能源信息署", "钻井", "页岩油", "炼油"
+    ],
+    "美国立法行政": [
+      "国会", "参议院", "众议院", "参众两院", "议员", "法案", "议案",
+      "白宫", "总统", "行政令", "特朗普", "拜登",
+      "通过", "表决", "投票", "签署", "否决", "听证会", "提交",
+      "拨款", "支出", "税改", "债务上限", "制裁", "关税",
+      "芯片", "生物安全", "TikTok", "国防授权"
+    ]
+  },
+
+  "domain_must_have": {
+    "国内政策/快讯": ["中国", "国内", "我国", "国务院", "发改委", "财政部", "央行", "国常会", "人民币"],
+    "国内科技": ["中国", "国内", "国产", "我国", "中芯", "华为", "比亚迪", "宁德时代", "大疆", "京东方"]
+  },
+
+  "source_list": [
+    {
+      "domain": "地缘/能源/黄金",
+      "sources": [
+        {"name": "金十数据", "type": "rss", "url": "http://localhost:8053/jin10/flash", "limit": 15, "lang": "zh"},
+        {"name": "CNBC", "type": "rss", "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", "limit": 10, "lang": "en"}
+      ]
+    },
+    {
+      "domain": "央行政策",
+      "sources": [
+        {"name": "财联社", "type": "rss", "url": "http://localhost:8053/cls/telegraph", "limit": 30, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "美联储政策",
+      "sources": [
+        {"name": "美联储", "type": "rss", "url": "https://www.federalreserve.gov/feeds/press_all.xml", "limit": 5, "lang": "en"}
+      ]
+    },
+    {
+      "domain": "证监会政策",
+      "sources": [
+        {"name": "财联社", "type": "rss", "url": "http://localhost:8053/cls/telegraph", "limit": 30, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "能源供需",
+      "sources": [
+        {"name": "财联社", "type": "rss", "url": "http://localhost:8053/cls/telegraph", "limit": 30, "lang": "zh"},
+        {"name": "金十数据", "type": "rss", "url": "http://localhost:8053/jin10/flash", "limit": 30, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "大宗商品持仓",
+      "sources": [
+        {"name": "CFTC", "type": "cftc", "limit": 10, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "美国立法行政",
+      "sources": [
+        {"name": "财联社", "type": "rss", "url": "http://localhost:8053/cls/telegraph", "limit": 30, "lang": "zh"},
+        {"name": "金十数据", "type": "rss", "url": "http://localhost:8053/jin10/flash", "limit": 30, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "美股",
+      "sources": [
+        {"name": "CNBC-财经", "type": "rss", "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", "limit": 10, "lang": "en"},
+        {"name": "华尔街日报-市场", "type": "rss", "url": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "limit": 10, "lang": "en"},
+        {"name": "MarketWatch", "type": "rss", "url": "https://feeds.marketwatch.com/marketwatch/topstories/", "limit": 10, "lang": "en"},
+        {"name": "Seeking Alpha", "type": "rss", "url": "https://seekingalpha.com/market_currents.xml", "limit": 10, "lang": "en"}
+      ]
+    },
+    {
+      "domain": "官方监管",
+      "sources": [
+        {"name": "美国SEC", "type": "rss", "url": "https://www.sec.gov/news/pressreleases.rss", "limit": 5, "lang": "en"}
+      ]
+    },
+    {
+      "domain": "国内政策/快讯",
+      "sources": [
+        {"name": "财联社", "type": "rss", "url": "http://localhost:8053/cls/telegraph", "limit": 30, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "国内科技",
+      "sources": [
+        {"name": "同花顺", "type": "rss", "url": "http://localhost:8053/ths/kuaixun", "limit": 30, "lang": "zh"}
+      ]
+    },
+    {
+      "domain": "海外科技",
+      "sources": [
+        {"name": "TechCrunch", "type": "rss", "url": "https://techcrunch.com/feed/", "limit": 5, "lang": "en"},
+        {"name": "The Verge", "type": "rss", "url": "https://www.theverge.com/rss/index.xml", "limit": 5, "lang": "en"}
+      ]
+    },
+    {
+      "domain": "A股",
+      "sources": [
+        {"name": "东方财富", "type": "api", "url": "https://np-listapi.eastmoney.com/comm/web/getNewsByColumns", "limit": 30, "lang": "zh"}
+      ]
+    }
+  ]
+}

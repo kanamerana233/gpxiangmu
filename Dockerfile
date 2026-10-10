@@ -1,4 +1,4 @@
-# 使用官方 Python 基础镜像
+# 使用官方Python镜像作为基础
 FROM python:3.12-slim
 
 # 设置工作目录
@@ -8,11 +8,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制项目所有文件
+# 复制项目所有文件到工作目录
 COPY . .
 
-# 暴露端口，Render 会通过 $PORT 环境变量指定
+# 暴露端口。Back4App会通过$PORT环境变量指定端口，这里先声明一个默认端口
 EXPOSE 8501
 
-# 启动 Streamlit 应用
-CMD ["streamlit", "run", "app.py", "--server.port=$PORT", "--server.address=0.0.0.0"]
+# 启动Streamlit应用，使用$PORT环境变量
+CMD streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
