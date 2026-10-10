@@ -4,3 +4,6 @@ feedparser
 python-dotenv
 openai
 cftc-cot
+pandas
+akshare
+mootdx
