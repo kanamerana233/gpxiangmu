@@ -1,19 +1,37 @@
 # 环境变量
 .env
 
+# 数据库
+*.db
+
 # Python 缓存
 __pycache__/
 *.pyc
 
-# 测试文件
+# 测试和诊断脚本
 test_*.py
+check_*.py
+find_tdx_blocks.py
+add_columns.py
 
-# 本地服务文件夹
+# 备份
+*_backup.py
+
+# 本地服务
 china-finance-rss/
 china-finance-rss-main/
+cn_rss_integration.py
+server.py
 
 # 数据文件夹
 dataset/
 
-# 数据库文件（可选，如果不想上传本地数据）
-stock_ai.db
+# 本地启动
+start.bat
+
+# 云端配置
+Dockerfile
+
+# IDE
+.vscode/
+.idea/
