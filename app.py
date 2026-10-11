@@ -1,9 +1,9 @@
 import os 
 os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
 os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
-# ===== 自动启动 china-finance-rss 后台服务 =====
-from cn_rss_integration import start_cn_rss_server
-start_cn_rss_server()
+# ===== 自动启动 china-finance-rss 后台服务（云端不启动） =====
+# from cn_rss_integration import start_cn_rss_server
+# start_cn_rss_server()
 # ==============================================
 from db import init_db, get_cached, save_article, db_stats, cleanup_old
 init_db()
