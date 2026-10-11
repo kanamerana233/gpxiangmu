@@ -1,8 +1,9 @@
 import re
 import feedparser
 import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from datetime import datetime, timezone, timedelta
-
 
 def is_blacklisted(item, blacklist):
     text = (item.get("title", "") + " " + item.get("summary", "")).lower()
@@ -82,6 +83,208 @@ def fetch_eastmoney(limit=5):
         "summary": item.get("summary", ""),
         "lang": "zh",
     } for item in items]
+def fetch_cls(limit=30):
+    """财联社电报（用 last_time 翻页抓多条）"""
+    url = "https://www.cls.cn/api/cache"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Referer": "https://www.cls.cn/telegraph",
+    }
+
+    results = []
+    seen_ids = set()
+    last_time = ""
+
+    max_pages = 5
+    for page in range(max_pages):
+        params = {
+            "app": "CailianpressWeb",
+            "name": "telegraph",
+            "os": "web",
+            "sv": "8.7.9",
+            "rn": "20",
+        }
+        if last_time:
+            params["last_time"] = last_time
+
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=15)
+            data = r.json()
+            items = data.get("data", {}).get("roll_data", [])
+        except Exception:
+            break
+
+        if not items:
+            break
+
+        new_count = 0
+        for item in items:
+            item_id = item.get("id", "")
+            if item_id in seen_ids:
+                continue
+            seen_ids.add(item_id)
+            new_count += 1
+
+            title = item.get("title", "") or item.get("brief", "")[:60]
+            brief = item.get("brief", "") or item.get("content", "")
+            ctime = item.get("ctime", "")
+            try:
+                from datetime import datetime, timezone, timedelta
+                dt = datetime.fromtimestamp(ctime, tz=timezone(timedelta(hours=8)))
+                time_str = dt.strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                time_str = str(ctime)
+
+            results.append({
+                "title": title,
+                "link": f"https://www.cls.cn/detail/{item_id}",
+                "time": time_str,
+                "media": "财联社",
+                "summary": brief,
+                "lang": "zh",
+            })
+
+        # 如果这一页没有新内容，停止
+        if new_count == 0:
+            break
+
+        # 取最后一页的 ctime 作为下一页的 last_time
+        last_item = items[-1]
+        last_time = str(last_item.get("ctime", ""))
+
+        if len(results) >= limit:
+            break
+
+    return results[:limit]
+
+
+def fetch_jin10(limit=30):
+    """金十数据快讯"""
+    url = "https://flash-api.jin10.com/get_flash_list"
+    params = {"channel": "-8200", "vip": "1"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Referer": "https://www.jin10.com/",
+        "Origin": "https://www.jin10.com",
+        "x-app-id": "bVBF4FyRTn5NJF5n",
+        "x-version": "1.0.0",
+    }
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=15)
+        data = r.json()
+        items = data.get("data", [])
+    except Exception:
+        return []
+
+    results = []
+    for item in items[:limit]:
+        content = item.get("data", {}).get("content", "")
+        if not content:
+            continue
+        title = content[:60] + ("..." if len(content) > 60 else "")
+
+        # 金十的时间是 id 里前 14 位：20261010152506
+        item_id = item.get("id", "")
+        time_str = ""
+        if len(item_id) >= 14:
+            try:
+                dt_str = item_id[:14]
+                from datetime import datetime
+                dt = datetime.strptime(dt_str, "%Y%m%d%H%M%S")
+                time_str = dt.strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                time_str = ""
+
+        results.append({
+            "title": title,
+            "link": f"https://flash.jin10.com/detail/{item_id}",
+            "time": time_str,
+            "media": "金十数据",
+            "summary": content,
+            "lang": "zh",
+        })
+    return results
+def fetch_ths(limit=30):
+    """同花顺快讯"""
+    url = "https://news.10jqka.com.cn/tapp/news/push/stock/"
+    params = {"page": "1", "tag": "", "track": "website", "pagesize": str(limit)}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Referer": "https://news.10jqka.com.cn/",
+    }
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=15)
+        data = r.json()
+        items = data.get("data", {}).get("list", [])
+    except Exception:
+        return []
+
+    results = []
+    for item in items[:limit]:
+        title = item.get("title", "")
+        digest = item.get("digest", "")
+        link = item.get("url", "")
+        ctime = item.get("rtime") or item.get("ctime") or item.get("time", "")
+        try:
+            from datetime import datetime, timezone, timedelta
+            dt = datetime.fromtimestamp(int(ctime), tz=timezone(timedelta(hours=8)))
+            time_str = dt.strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            time_str = str(ctime)
+
+        results.append({
+            "title": title,
+            "link": link,
+            "time": time_str,
+            "media": "同花顺",
+            "summary": digest,
+            "lang": "zh",
+        })
+    return results
+
+
+def fetch_wscn(limit=30, channel="global-channel"):
+    """华尔街见闻快讯"""
+    url = "https://api-one-wscn.awtmt.com/apiv1/content/lives"
+    params = {"channel": channel, "client": "pc", "limit": str(limit)}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Referer": "https://wallstreetcn.com/",
+    }
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=15)
+        data = r.json()
+        items = data.get("data", {}).get("items", [])
+    except Exception:
+        return []
+
+    results = []
+    for item in items[:limit]:
+        content = item.get("content", "")
+        content = re.sub(r"<[^>]+>", "", content).strip()
+        if not content:
+            continue
+        title = content[:60] + ("..." if len(content) > 60 else "")
+
+        display_time = item.get("display_time", 0)
+        try:
+            from datetime import datetime, timezone, timedelta
+            dt = datetime.fromtimestamp(int(display_time), tz=timezone(timedelta(hours=8)))
+            time_str = dt.strftime("%Y-%m-%d %H:%M")
+        except Exception:
+            time_str = ""
+
+        item_id = item.get("id", "")
+
+        results.append({
+            "title": title,
+            "link": f"https://wallstreetcn.com/livenews/{item_id}",
+            "time": time_str,
+            "media": "华尔街见闻",
+            "summary": content,
+            "lang": "zh",
+        })
+    return results
 
 
 def fetch_cftc_data():
@@ -248,3 +451,191 @@ def render_item(st, item, idx):
 
     if item.get("link"):
         st.markdown(f"[原文链接]({item['link']})")
+
+def filter_by_time(items, max_days=3):
+    """过滤掉超过 max_days 天的旧新闻"""
+    from datetime import datetime, timedelta
+    cutoff = datetime.now() - timedelta(days=max_days)
+    result = []
+    for item in items:
+        time_str = item.get("time", "")
+        if not time_str:
+            result.append(item)  # 没时间的保留
+            continue
+        try:
+            dt = datetime.strptime(time_str, "%Y-%m-%d %H:%M")
+            if dt >= cutoff:
+                result.append(item)
+        except Exception:
+            result.append(item)  # 时间格式不对的保留
+    return result
+def batch_quick_filter(client, items, domain, batch_size=20):
+    """批量判断一批新闻是否属于某领域。返回相关的 item 列表。"""
+    if not items:
+        return []
+
+    relevant = []
+    total = len(items)
+
+    for start in range(0, total, batch_size):
+        batch = items[start:start + batch_size]
+
+        lines = []
+        for i, item in enumerate(batch, 1):
+            title = item.get("title", "")[:60]
+            summary = item.get("summary", "")[:120]
+            lines.append(f"{i}. {title} | {summary}")
+        text = "\n".join(lines)
+
+        prompt = f"""下面是 {len(batch)} 条财经新闻，请判断每条是否与「{domain}」领域直接相关。
+
+{text}
+
+严格按以下格式输出，只列出相关的序号，用逗号分隔：
+相关序号：1,3,5
+
+如果都不相关，输出：
+相关序号：无
+
+不要其他内容。"""
+
+        try:
+            response = client.chat.completions.create(
+                model="deepseek-flash",
+                messages=[
+                    {"role": "system", "content": "你是财经新闻分类助手，只输出相关序号。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1
+            )
+            result_text = response.choices[0].message.content.strip()
+
+            match = re.search(r"相关序号[：:]\s*(.+)", result_text)
+            if match:
+                nums_str = match.group(1).strip()
+                if "无" in nums_str:
+                    continue
+                nums = [int(x.strip()) for x in nums_str.split(",") if x.strip().isdigit()]
+                for n in nums:
+                    if 1 <= n <= len(batch):
+                        relevant.append(batch[n - 1])
+            else:
+                # AI 返回格式不对，保留这一批全部，避免误杀
+                relevant.extend(batch)
+        except Exception:
+            # 出错就保留这一批全部
+            relevant.extend(batch)
+
+    return relevant
+def fetch_pbc(limit=10):
+    """抓取央行新闻发布页"""
+    url = "https://www.pbc.gov.cn/goutongjiaoliu/113456/113469/index.html"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://www.pbc.gov.cn/",
+    }
+    try:
+        r = requests.get(url, headers=headers, timeout=15)
+        r.encoding = r.apparent_encoding
+        soup = BeautifulSoup(r.text, "html.parser")
+    except Exception as e:
+        print(f"[PBC] 抓取失败：{e}")
+        return []
+
+    results = []
+    seen_titles = set()
+
+    for a in soup.find_all("a"):
+        href = a.get("href", "")
+        if not href:
+            continue
+        # 只保留 /goutongjiaoliu/113456/113469/ 开头的新闻详情页
+        if "/goutongjiaoliu/113456/113469/" not in href:
+            continue
+
+        title = a.get("title") or a.text.strip()
+        if not title or len(title) < 8:
+            continue
+        if title in seen_titles:
+            continue
+
+        seen_titles.add(title)
+        full_link = urljoin("https://www.pbc.gov.cn/", href)
+
+        # 从 URL 里提取日期：/2026101011293518009/
+        time_str = ""
+        match = re.search(r"/(\d{14})", href)
+        if match:
+            ts = match.group(1)
+            try:
+                dt = datetime.strptime(ts[:8], "%Y%m%d")
+                time_str = dt.strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
+        results.append({
+            "title": title,
+            "link": full_link,
+            "time": time_str,
+            "media": "央行官网",
+            "summary": title,
+            "lang": "zh",
+        })
+        if len(results) >= limit:
+            break
+
+    return results
+
+
+def fetch_csrc(limit=10):
+    """抓取证监会新闻发布页"""
+    url = "https://www.csrc.gov.cn/csrc/xwfb/index.shtml"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://www.csrc.gov.cn/",
+    }
+    try:
+        r = requests.get(url, headers=headers, timeout=15)
+        r.encoding = r.apparent_encoding
+        soup = BeautifulSoup(r.text, "html.parser")
+    except Exception as e:
+        print(f"[CSRC] 抓取失败：{e}")
+        return []
+
+    results = []
+    seen_titles = set()
+
+    for a in soup.find_all("a"):
+        href = a.get("href", "")
+        if not href:
+            continue
+        if "content.shtml" not in href:
+            continue
+        # 只保留 c100028 和 c106311 两个栏目（新闻发布、新闻发言人）
+        if "c100028" not in href and "c106311" not in href:
+            continue
+        # 跳过旧栏目
+        if "c100029" in href:
+            continue
+
+        title = a.get("title") or a.text.strip()
+        if not title or len(title) < 8:
+            continue
+        if title in seen_titles:
+            continue
+
+        seen_titles.add(title)
+        full_link = urljoin("https://www.csrc.gov.cn/", href)
+
+        results.append({
+            "title": title,
+            "link": full_link,
+            "time": "",
+            "media": "证监会官网",
+            "summary": title,
+            "lang": "zh",
+        })
+        if len(results) >= limit:
+            break
+
+    return results

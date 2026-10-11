@@ -1,4 +1,4 @@
-import os
+import os 
 os.environ["STREAMLIT_SERVER_HEADLESS"] = "true"
 os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
 # ===== 自动启动 china-finance-rss 后台服务 =====
@@ -15,9 +15,12 @@ from datetime import datetime
 from dotenv import load_dotenv
 from openai import OpenAI
 from utils import (
-    is_blacklisted, match_keywords, parse_time,
+    is_blacklisted, match_keywords, parse_time, filter_by_time,
     fetch_rss, fetch_eastmoney, fetch_cftc_data,
+    fetch_cls, fetch_jin10, fetch_ths, fetch_wscn,
+    fetch_pbc, fetch_csrc,
     analyze_with_ai, quick_filter, translate_keyword,
+    batch_quick_filter,
     render_item as _render_item,
 )
 from stock_picker import run_stock_picker
@@ -104,7 +107,7 @@ if mode == "清单模式":
     st.caption(f"数据库：共 {total} 条，已分析 {analyzed} 条")
 
     ai_full = st.slider("每个源完整分析的条数", 0, 5, 3, key="list_full")
-    ai_quick = st.slider("每个源快速过滤的条数", 0, 5, 2, key="list_quick")
+    ai_quick = st.slider("每个源快速过滤的条数", 0, 5, 5, key="list_quick")
 
     if st.button("开始抓取", key="list_fetch"):
         all_data = []
@@ -128,16 +131,34 @@ if mode == "清单模式":
                     raw_items = fetch_eastmoney(source["limit"])
                 elif source["type"] == "cftc":
                     raw_items = fetch_cftc_data()
+                elif source["type"] == "cls":
+                    raw_items = fetch_cls(source["limit"])
+                elif source["type"] == "jin10":
+                    raw_items = fetch_jin10(source["limit"])
+                elif source["type"] == "ths":
+                    raw_items = fetch_ths(source["limit"])
+                elif source["type"] == "wscn":
+                    raw_items = fetch_wscn(source["limit"])
+                elif source["type"] == "pbc":
+                    raw_items = fetch_pbc(source["limit"])
+                elif source["type"] == "csrc":
+                    raw_items = fetch_csrc(source["limit"])
                 else:
                     raw_items = []
 
+                 # 黑名单过滤
                 filtered = []
                 for item in raw_items:
                     if is_blacklisted(item, BLACKLIST):
                         continue
-                    if not match_keywords(item, domain["keywords"], must_have):
-                        continue
                     filtered.append(item)
+
+                # 关键词过滤
+                if domain["keywords"]:
+                    filtered = [x for x in filtered if match_keywords(x, domain["keywords"], must_have)]
+
+                # 时间过滤：只保留最近7天
+                filtered = filter_by_time(filtered, max_days=7)
 
                 filtered = filtered[:5]
 
@@ -390,6 +411,18 @@ else:
                     items = fetch_eastmoney(8)
                 elif source["type"] == "cftc":
                     items = fetch_cftc_data()
+                elif source["type"] == "cls":
+                    items = fetch_cls(8)
+                elif source["type"] == "jin10":
+                    items = fetch_jin10(8)
+                elif source["type"] == "ths":
+                    items = fetch_ths(8)
+                elif source["type"] == "wscn":
+                    items = fetch_wscn(8)
+                elif source["type"] == "pbc":
+                    items = fetch_pbc(8)
+                elif source["type"] == "csrc":
+                    items = fetch_csrc(8)
                 else:
                     items = []
                 all_items.extend(items)

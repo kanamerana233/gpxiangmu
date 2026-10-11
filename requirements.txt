@@ -7,3 +7,5 @@ cftc-cot
 pandas
 akshare
 mootdx
+beautifulsoup4
+debug_filter.py
