@@ -3,6 +3,9 @@
 
 # 数据库
 *.db
+!stocks.db
+!stock_ai.db
+!picker_cache.db
 
 # Python 缓存
 __pycache__/
