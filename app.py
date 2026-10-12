@@ -29,6 +29,23 @@ from stock_picker import run_stock_picker
 # 本地读取 .env
 load_dotenv()
 
+# 如果没读到 Key，提示用户输入
+if not os.getenv("DEEPSEEK_API_KEY"):
+    import streamlit as st
+    st.set_page_config(page_title="首次配置", layout="centered")
+    st.title("首次运行，请输入 DeepSeek API Key")
+    st.write("请粘贴你的 DeepSeek API Key（sk- 开头）")
+    st.write("获取地址：https://platform.deepseek.com/")
+    key = st.text_input("API Key", type="password")
+    if st.button("保存并启动"):
+        if key.strip().startswith("sk-"):
+            with open(".env", "w", encoding="utf-8") as f:
+                f.write(f"DEEPSEEK_API_KEY={key.strip()}\n")
+            st.success("已保存！请关闭窗口后重新启动程序。")
+        else:
+            st.error("Key 格式不对，应该以 sk- 开头")
+    st.stop()
+
 # 云端兼容：如果 st.secrets 里有 Key，覆盖环境变量
 try:
     if "DEEPSEEK_API_KEY" in st.secrets:
@@ -161,7 +178,7 @@ if mode == "清单模式":
                 # 时间过滤：只保留最近7天
                 filtered = filter_by_time(filtered, max_days=7)
 
-                filtered = filtered[:5]
+                filtered = filtered[:10]
 
                 analyzed_items = []
                 for i, item in enumerate(filtered):
@@ -395,10 +412,10 @@ elif mode == "选股模式":
 
 # ============ 关键词模式 ============
 else:
-    st.write("输入关键词，跨所有信息源搜索。")
+    st.write("输入关键词，跨所有信息源搜索。只按字面匹配，不做金融相关度分类。")
 
     keyword = st.text_input("输入关键词（留空则不过滤）", "")
-    ai_count = st.slider("对前几条调用 AI 分析", 0, 40, 12, key="kw_ai")
+    ai_count = st.slider("对前几条翻译（只对英文源有效）", 0, 40, 12, key="kw_ai")
 
     if st.button("开始搜集", key="kw_fetch"):
         all_items = []
@@ -407,27 +424,28 @@ else:
         for domain in SOURCE_LIST:
             for source in domain["sources"]:
                 if source["type"] == "rss":
-                    items = fetch_rss(source["name"], source["url"], 8, source["lang"])
+                    items = fetch_rss(source["name"], source["url"], 30, source["lang"])
                 elif source["type"] == "api":
-                    items = fetch_eastmoney(8)
+                    items = fetch_eastmoney(30)
                 elif source["type"] == "cftc":
                     items = fetch_cftc_data()
                 elif source["type"] == "cls":
-                    items = fetch_cls(8)
+                    items = fetch_cls(30)
                 elif source["type"] == "jin10":
-                    items = fetch_jin10(8)
+                    items = fetch_jin10(30)
                 elif source["type"] == "ths":
-                    items = fetch_ths(8)
+                    items = fetch_ths(30)
                 elif source["type"] == "wscn":
-                    items = fetch_wscn(8)
+                    items = fetch_wscn(30)
                 elif source["type"] == "pbc":
-                    items = fetch_pbc(8)
+                    items = fetch_pbc(30)
                 elif source["type"] == "csrc":
-                    items = fetch_csrc(8)
+                    items = fetch_csrc(30)
                 else:
                     items = []
                 all_items.extend(items)
 
+        # 去重
         seen = set()
         unique_items = []
         for item in all_items:
@@ -440,77 +458,80 @@ else:
         progress.progress(1.0)
         progress.empty()
 
+        # 黑名单过滤
         all_items = [x for x in all_items if not is_blacklisted(x, BLACKLIST)]
-        all_items.sort(key=lambda x: 0 if x["lang"] == "en" else 1)
 
         st.success(f"共抓到 {len(all_items)} 条")
 
+        # 关键词扩展 + 匹配
         if keyword.strip():
-            with st.spinner("正在翻译关键词..."):
+            with st.spinner("正在扩展关键词..."):
                 keywords = translate_keyword(client, keyword)
             st.info(f"搜索关键词：{' / '.join(keywords)}")
 
             filtered = []
             for x in all_items:
                 title_lower = x.get("title", "").lower()
-                summary_lower = x.get("summary", "").lower()
                 for kw in keywords:
                     kw_lower = kw.lower()
-                    if kw_lower in title_lower or kw_lower in summary_lower:
-                        filtered.append(x)
-                        break
+                    # 短词（<=4字符）用单词边界匹配，避免误命中
+                    if len(kw_lower) <= 4 and kw_lower.isascii():
+                        pattern = r"\b" + re.escape(kw_lower) + r"\b"
+                        if re.search(pattern, title_lower):
+                            filtered.append(x)
+                            break
+                    else:
+                        if kw_lower in title_lower:
+                            filtered.append(x)
+                            break
 
             if not filtered:
-                st.info(f"没有包含「{keyword}」的内容，下面是全部。")
-                filtered = all_items
+                st.warning(f"没有包含「{keyword}」的内容。")
+                filtered = []
         else:
             filtered = all_items
 
-        filtered = filtered[:60]
+        # 时间过滤：只保留最近 7 天
+        filtered = filter_by_time(filtered, max_days=7)
+        
+        # 按时间排序（新的在前）
+        filtered.sort(key=lambda x: x.get("time", ""), reverse=True)
 
-        results = []
-        for i, item in enumerate(filtered, 1):
-            row = dict(item)
-            row["cn_title"] = None
-            row["cn_summary"] = None
-            row["ai_summary"] = None
-            row["ai_category"] = "未分析"
+        st.success(f"匹配到 {len(filtered)} 条")
 
-            if item.get("skip_ai"):
-                results.append(row)
-                continue
+        if not filtered:
+            st.info("没有匹配结果，换个关键词试试。")
+        else:
+            # 只对前 N 条英文做翻译
+            for i, item in enumerate(filtered[:60], 1):
+                row = dict(item)
+                row["cn_title"] = None
+                row["cn_summary"] = None
 
-            cached = get_cached(item.get("link", ""))
-            if cached and cached[0]:
-                row["cn_title"] = cached[0]
-                row["cn_summary"] = cached[1]
-                row["ai_summary"] = cached[2]
-                row["ai_category"] = cached[3]
-                results.append(row)
-                continue
+                # 先查缓存
+                if not item.get("skip_ai"):
+                    cached = get_cached(item.get("link", ""))
+                    if cached and cached[0]:
+                        row["cn_title"] = cached[0]
+                        row["cn_summary"] = cached[1]
+                    elif i <= ai_count and item.get("lang") == "en":
+                        cn_title, cn_summary, _, _ = analyze_with_ai(
+                            client, item["title"], item["summary"], item["lang"]
+                        )
+                        row["cn_title"] = cn_title
+                        row["cn_summary"] = cn_summary
+                        save_article({
+                            "link": item["link"],
+                            "title": item["title"],
+                            "summary": item["summary"],
+                            "media": item["media"],
+                            "time": item["time"],
+                            "lang": item["lang"],
+                            "cn_title": cn_title,
+                            "cn_summary": cn_summary,
+                            "ai_summary": None,
+                            "ai_category": None,
+                        }, "关键词搜索")
 
-            if i <= ai_count:
-                cn_title, cn_summary, ai_summary, ai_category = analyze_with_ai(
-                    client,item["title"], item["summary"], item["lang"]
-                )
-                row["cn_title"] = cn_title
-                row["cn_summary"] = cn_summary
-                row["ai_summary"] = ai_summary
-                row["ai_category"] = ai_category
-                save_article(row, "关键词搜索")
-
-            results.append(row)
-
-        groups = {"金融直接相关": [], "无关但有用": [], "噪音": [], "未分类": [], "未分析": []}
-        for row in results:
-            cat = row["ai_category"]
-            groups[cat if cat in groups else "未分类"].append(row)
-
-        for group_name in ["金融直接相关", "无关但有用", "噪音", "未分类", "未分析"]:
-            rows = groups.get(group_name, [])
-            if not rows:
-                continue
-            st.markdown(f"## {group_name}（{len(rows)} 条）")
-            for i, row in enumerate(rows, 1):
                 render_item(row, i)
                 st.divider()

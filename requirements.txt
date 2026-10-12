@@ -8,4 +8,6 @@ pandas
 akshare
 mootdx
 beautifulsoup4
-debug_filter.py
+setuptools
+wheel
+pywebview

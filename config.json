@@ -27,15 +27,14 @@
       "专项债", "减税", "降费", "经济", "财政"
     ],
     "国内科技": [
-      "半导体", "芯片", "人工智能", "软件", "云计算", "量子",
-      "生物医药", "创新药", "疫苗", "医疗器械",
-      "新能源", "光伏", "锂电", "储能", "氢能", "电动车",
-      "稀土", "高端装备", "机器人", "航空航天", "卫星",
-      "环保", "碳中和", "种业", "可控核聚变", "6G"
-    ],
-    "A股": [
-      "A股", "沪指", "上证", "深证", "创业板", "科创板", "北交所", "沪深"
-    ],
+  "AI", "半导体", "芯片", "人工智能", "大模型", "软件", "云计算", "量子",
+  "生物医药", "创新药", "疫苗", "医疗器械",
+  "新能源", "光伏", "锂电", "储能", "氢能", "电动车",
+  "稀土", "高端装备", "机器人", "航空航天", "卫星",
+  "环保", "碳中和", "种业", "可控核聚变", "6G"
+],
+    "A股": ["A股", "沪指", "上证", "深证", "创业板", "科创板", "北交所", "沪深", "股王", "涨停", "跌停", "主力", "北向资金", "成交额", "解禁", "回购", "分红"]
+    ,
     "美股": [
       "美股", "纳斯达克", "道琼斯", "标普",
       "NYSE", "Nasdaq",
@@ -51,32 +50,35 @@
       "国会", "参议院", "众议院", "白宫", "总统", "行政令",
       "特朗普", "拜登", "法案", "议案", "听证会",
       "债务上限", "税改", "国防授权"
-    ]
-  },
-
-  "domain_must_have": {
-  "央行政策": ["央行", "人民银行", "货币政策", "降准", "降息", "LPR", "MLF", "逆回购", "公开市场", "存款准备金"],
-  "证监会政策": ["证监会", "证券监管", "交易所", "上市公司监管", "并购重组", "IPO", "退市", "注册制"],
-  "国内政策/快讯": ["中国", "国内", "我国", "国务院", "发改委", "财政部", "国常会", "人民币"],
-  "国内科技": ["中国", "国内", "国产", "华为", "小米", "比亚迪", "腾讯", "阿里", "字节", "百度", "中芯", "大疆", "宁德时代", "京东方", "紫光", "寒武纪", "科大讯飞", "商汤", "旷视", "美团", "京东", "拼多多", "网易", "滴滴", "联想", "vivo", "OPPO", "荣耀", "蔚来", "小鹏", "理想"],
+    ],
   "海外科技": [
-  "OpenAI", "Google", "Apple", "Microsoft", "Meta", "Nvidia", "Tesla", "Amazon",
+  "AI", "OpenAI", "Google", "Apple", "Microsoft", "Meta", "Nvidia", "Tesla", "Amazon",
   "Intel", "AMD", "Qualcomm", "Broadcom", "Oracle", "IBM", "Netflix", "Spotify",
   "Uber", "Airbnb", "Samsung", "Sony", "TSMC",
   "英特尔", "英伟达", "微软", "苹果", "谷歌", "亚马逊", "特斯拉", "三星", "索尼", "台积电", "高通", "博通", "甲骨文",
   "GPT", "ChatGPT", "Gemini", "Claude", "Copilot", "Grok",
   "AI模型", "大模型", "生成式AI", "AGI"
 ]
+  },
+
+  "domain_must_have": {
+  "央行政策": ["央行", "人民银行", "货币政策", "降准", "降息", "LPR", "MLF", "逆回购", "公开市场", "存款准备金"],
+  "证监会政策": ["证监会", "证券监管", "交易所", "上市公司监管", "并购重组", "IPO", "退市", "注册制"],
+  "国内政策/快讯": ["中国", "国内", "我国", "国务院", "发改委", "财政部", "国常会", "人民币"],
+  "国内科技": ["中国", "国内", "我国", "国产", "华为", "小米", "比亚迪", "腾讯", "阿里", "字节", "百度", "中芯", "大疆", "宁德时代", "京东方", "寒武纪", "科大讯飞", "商汤", "旷视", "美团", "京东", "拼多多", "网易", "滴滴", "智谱", "月之暗面", "百川", "零一万物", "MiniMax", "商汤", "地平线", "壁仞", "摩尔线程"],
+  "海外科技": ["OpenAI", "Google", "Apple", "Microsoft", "Meta", "Nvidia", "Tesla", "Amazon", "Samsung", "Sony", "TSMC", "英特尔", "英伟达", "微软", "苹果", "谷歌", "亚马逊", "特斯拉", "三星", "索尼", "台积电", "GPT", "ChatGPT", "Gemini", "Claude"]
 },
 
   "source_list": [
     {
-      "domain": "地缘/能源/黄金",
-      "sources": [
-        {"name": "金十数据", "type": "jin10", "limit": 100, "lang": "zh"},
-        {"name": "CNBC", "type": "rss", "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", "limit": 10, "lang": "en"}
-      ]
-    },
+  "domain": "地缘/能源/黄金",
+  "sources": [
+    {"name": "热摸爽综合", "type": "rss", "url": "https://remoshuang.com/feed.xml", "limit": 30, "lang": "zh"},
+    {"name": "热摸爽升温", "type": "rss", "url": "https://remoshuang.com/feed/rising.xml", "limit": 20, "lang": "zh"},
+    {"name": "金十数据", "type": "jin10", "limit": 100, "lang": "zh"},
+    {"name": "CNBC", "type": "rss", "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", "limit": 10, "lang": "en"}
+  ]
+},
     {
       "domain": "央行政策",
       "sources": [
@@ -138,23 +140,26 @@
         {"name": "财联社", "type": "cls", "limit": 100, "lang": "zh"}
       ]
     },
-    {
+   {
   "domain": "国内科技",
   "sources": [
-    {"name": "热摸爽科技", "type": "rss", "url": "https://remoshuang.com/feed/tech.xml", "limit": 30, "lang": "zh"}
+    {"name": "热摸爽科技", "type": "rss", "url": "https://remoshuang.com/feed/tech.xml", "limit": 30, "lang": "zh"},
+    {"name": "热摸爽综合", "type": "rss", "url": "https://remoshuang.com/feed.xml", "limit": 20, "lang": "zh"}
   ]
 },
 {
   "domain": "海外科技",
   "sources": [
-    {"name": "热摸爽科技", "type": "rss", "url": "https://remoshuang.com/feed/tech.xml", "limit": 30, "lang": "zh"}
+    {"name": "热摸爽AI", "type": "rss", "url": "https://remoshuang.com/feed/ai.xml", "limit": 30, "lang": "zh"},
+    {"name": "热摸爽综合", "type": "rss", "url": "https://remoshuang.com/feed.xml", "limit": 20, "lang": "zh"}
   ]
 },
     {
-      "domain": "A股",
-      "sources": [
-        {"name": "东方财富", "type": "api", "url": "https://np-listapi.eastmoney.com/comm/web/getNewsByColumns", "limit": 30, "lang": "zh"}
-      ]
-    }
+  "domain": "A股",
+  "sources": [
+    {"name": "热摸爽财经", "type": "rss", "url": "https://remoshuang.com/feed/finance.xml", "limit": 30, "lang": "zh"},
+    {"name": "东方财富", "type": "api", "url": "https://np-listapi.eastmoney.com/comm/web/getNewsByColumns", "limit": 30, "lang": "zh"}
+  ]
+}
   ]
 }

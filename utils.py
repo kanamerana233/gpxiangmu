@@ -1,3 +1,4 @@
+import json
 import re
 import feedparser
 import requests
@@ -411,23 +412,55 @@ def quick_filter(client, title, summary, domain):
 
 
 def translate_keyword(client, keyword):
+    """把关键词翻译成英文，并扩展同义词（禁止泛词）"""
     if not keyword.strip():
         return []
-    if re.match(r"^[a-zA-Z0-9\s\-]+$", keyword):
-        return [keyword]
+
+    prompt = f"""用户想搜索财经新闻，关键词是：{keyword}
+
+请返回一组用于精确搜索的关键词，要求：
+1. 包含原关键词
+2. 包含它的中文同义词、英文翻译、常见别称、具体产品名
+3. 禁止输出太泛的词，比如：科技、投资、政策、经济、市场、数据、行业、公司、股票
+4. 每个词必须足够具体，能和原关键词强关联
+
+示例：
+输入"AI" → ["AI", "人工智能", "大模型", "生成式AI", "ChatGPT", "OpenAI", "GPT", "Claude", "Gemini"]
+输入"新能源" → ["新能源", "光伏", "锂电", "电动车", "储能", "氢能", "风电", "new energy", "EV"]
+输入"降息" → ["降息", "降准", "LPR", "货币政策", "宽松", "rate cut", "美联储降息"]
+
+严格只输出 JSON 数组格式，不要解释，不要其他内容：
+["词1", "词2", "词3", ...]
+
+最多 10 个词。"""
+
     try:
         response = client.chat.completions.create(
             model="deepseek-flash",
             messages=[
-                {"role": "system", "content": "你是翻译助手。把用户输入的中文关键词翻译成英文，只输出翻译结果，不要解释，不要标点，不要引号。"},
-                {"role": "user", "content": keyword}
+                {"role": "system", "content": "你是搜索关键词扩展助手，只输出JSON数组，禁止输出泛词。"},
+                {"role": "user", "content": prompt}
             ],
-            temperature=0.1
+            temperature=0.3
         )
-        en_keyword = response.choices[0].message.content.strip()
-        return [keyword, en_keyword]
+        text = response.choices[0].message.content.strip()
+
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if match:
+            try:
+                keywords = json.loads(match.group(0))
+                # 过滤掉太泛的词
+                banned = ["科技", "投资", "政策", "经济", "市场", "数据", "行业", "公司", "股票", "金融", "商业", "领域"]
+                keywords = [kw for kw in keywords if kw not in banned]
+                if keyword not in keywords:
+                    keywords.insert(0, keyword)
+                return keywords[:10]
+            except Exception:
+                pass
     except Exception:
-        return [keyword]
+        pass
+
+    return [keyword]
 
 
 def render_item(st, item, idx):
